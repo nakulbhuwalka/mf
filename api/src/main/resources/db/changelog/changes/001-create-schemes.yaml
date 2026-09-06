@@ -1,0 +1,52 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-schemes-table
+      author: mf-api
+      changes:
+        - createTable:
+            tableName: schemes
+            columns:
+              - column:
+                  name: scheme_code
+                  type: int
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: scheme_name
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fund_house
+                  type: varchar(255)
+              - column:
+                  name: scheme_type
+                  type: varchar(100)
+              - column:
+                  name: scheme_category
+                  type: varchar(255)
+              - column:
+                  name: isin_growth
+                  type: varchar(20)
+              - column:
+                  name: isin_div_reinvestment
+                  type: varchar(20)
+              - column:
+                  name: nav_synced
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: schemes
+            indexName: idx_schemes_name
+            columns:
+              - column:
+                  name: scheme_name
+        - createIndex:
+            tableName: schemes
+            indexName: idx_schemes_fund_house
+            columns:
+              - column:
+                  name: fund_house

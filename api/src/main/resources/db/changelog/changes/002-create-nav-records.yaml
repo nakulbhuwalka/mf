@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-nav-records-table
+      author: mf-api
+      changes:
+        - createTable:
+            tableName: nav_records
+            columns:
+              - column:
+                  name: scheme_code
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: nav_date
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: nav_value
+                  type: float
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: nav_records
+            columnNames: scheme_code, nav_date
+            constraintName: pk_nav_records
+        - addForeignKeyConstraint:
+            baseTableName: nav_records
+            baseColumnNames: scheme_code
+            referencedTableName: schemes
+            referencedColumnNames: scheme_code
+            constraintName: fk_nav_records_scheme
+            onDelete: CASCADE
+        - createIndex:
+            tableName: nav_records
+            indexName: idx_nav_records_date
+            columns:
+              - column:
+                  name: scheme_code
+              - column:
+                  name: nav_date
