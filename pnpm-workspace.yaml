@@ -1,0 +1,6 @@
+packages:
+  - web
+  - bdd/web
+
+allowBuilds:
+  nx: false
