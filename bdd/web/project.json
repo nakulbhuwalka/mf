@@ -1,0 +1,17 @@
+{
+  "name": "bdd-web",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "bdd/web/features",
+  "implicitDependencies": ["web"],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "options": {
+        "command": "NODE_OPTIONS='--import tsx' pnpm cucumber-js",
+        "cwd": "bdd/web"
+      }
+    }
+  }
+}
