@@ -2,3 +2,6 @@ databaseChangeLog:
   - include:
       file: changes/001-extensions.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/002-scheme.yaml
+      relativeToChangelogFile: true
