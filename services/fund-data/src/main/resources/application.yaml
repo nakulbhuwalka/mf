@@ -1,0 +1,12 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: fund-data
+  # Schema is owned by the db-migrations module (run explicitly with `nx migrate db-migrations`).
+  liquibase:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: none
