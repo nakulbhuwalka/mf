@@ -8,3 +8,6 @@ databaseChangeLog:
   - include:
       file: changes/003-nav.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/004-scheme-sync.yaml
+      relativeToChangelogFile: true
