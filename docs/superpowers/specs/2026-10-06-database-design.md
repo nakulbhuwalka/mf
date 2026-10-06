@@ -1,7 +1,7 @@
 # Database Design (fund-data, PostgreSQL)
 
 Date: 2026-10-06
-Status: **awaiting review**
+Status: **approved and implemented** in `db/migrations` (changesets 001–005, tested against PostgreSQL 18 with Testcontainers)
 Implements: `db/migrations` (Liquibase YAML) for the `fund-data` service. Parent spec: `2026-10-06-mf-app-design.md`.
 
 Only public data is stored. Your portfolio never reaches this database.

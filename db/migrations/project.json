@@ -21,11 +21,27 @@
         "cwd": "db/migrations"
       }
     },
+    "db-up": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "docker compose up -d --wait",
+        "cwd": "db"
+      }
+    },
+    "db-down": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "docker compose down",
+        "cwd": "db"
+      }
+    },
     "migrate": {
       "executor": "nx:run-commands",
       "cache": false,
       "options": {
-        "command": "mvn liquibase:update",
+        "command": "mvn process-resources liquibase:update",
         "cwd": "db/migrations"
       }
     }
