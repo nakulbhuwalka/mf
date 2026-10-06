@@ -12,9 +12,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A service under test. If it already answers its health endpoint (for example when FUND_DATA_URL or
- * PARSER_URL points at a running instance) it is used as is; otherwise it is started from the built
- * artifacts and stopped again by {@link #stopAll()}.
+ * A service under test. When its URL variable (FUND_DATA_URL or PARSER_URL) is set, that running instance is
+ * tested as is and nothing is started. Otherwise the service is started from the built artifacts and stopped
+ * again by {@link #stopAll()}; if something already answers on the default port the suite refuses to run,
+ * because it would silently test that process instead of the freshly built artifact.
  */
 final class ServiceProcess {
 
@@ -26,6 +27,7 @@ final class ServiceProcess {
             "fund-data",
             new ServiceProcess(
                     "fund-data",
+                    "FUND_DATA_URL",
                     envOrDefault("FUND_DATA_URL", "http://localhost:8081"),
                     "/actuator/health",
                     ROOT.resolve("services/fund-data"),
@@ -36,20 +38,26 @@ final class ServiceProcess {
             "statement-parser",
             new ServiceProcess(
                     "statement-parser",
+                    "PARSER_URL",
                     envOrDefault("PARSER_URL", "http://localhost:8082"),
                     "/health",
                     ROOT.resolve("services/statement-parser"),
                     List.of("uv", "run", "uvicorn", "statement_parser.main:app", "--port", "8082")));
 
     private final String name;
+    private final String urlVariable;
+    private final boolean external;
     private final String baseUrl;
     private final String healthPath;
     private final Path workDir;
     private final List<String> command;
     private Process process;
 
-    private ServiceProcess(String name, String baseUrl, String healthPath, Path workDir, List<String> command) {
+    private ServiceProcess(
+            String name, String urlVariable, String baseUrl, String healthPath, Path workDir, List<String> command) {
         this.name = name;
+        this.urlVariable = urlVariable;
+        this.external = System.getenv(urlVariable) != null && !System.getenv(urlVariable).isBlank();
         this.baseUrl = baseUrl;
         this.healthPath = healthPath;
         this.workDir = workDir;
@@ -73,8 +81,19 @@ final class ServiceProcess {
     }
 
     synchronized void ensureRunning() throws Exception {
-        if (isHealthy()) {
+        if (process != null) {
+            return; // started by an earlier scenario
+        }
+        boolean alreadyUp = isHealthy();
+        if (external) {
+            if (!alreadyUp) {
+                throw new IllegalStateException(name + ": " + urlVariable + "=" + baseUrl + " is not healthy");
+            }
             return;
+        }
+        if (alreadyUp) {
+            throw new IllegalStateException(name + ": something already answers at " + baseUrl
+                    + "; stop it, or set " + urlVariable + " to test that instance deliberately");
         }
         Path log = ROOT.resolve("bdd/services/target/" + name + ".log");
         Files.createDirectories(log.getParent());

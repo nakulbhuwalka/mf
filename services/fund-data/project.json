@@ -11,7 +11,7 @@
         "command": "mvn -q package -DskipTests",
         "cwd": "services/fund-data"
       },
-      "inputs": ["{projectRoot}/pom.xml", "{projectRoot}/src/main/**/*"],
+      "inputs": ["{projectRoot}/pom.xml", "{projectRoot}/src/main/**/*", "^default"],
       "outputs": ["{projectRoot}/target"]
     },
     "test": {

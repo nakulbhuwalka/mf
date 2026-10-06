@@ -16,18 +16,42 @@ let previewExit: string | undefined;
 let browser: Browser;
 let page: Page;
 
+async function isServing(url: string): Promise<boolean> {
+  try {
+    return (await fetch(url)).ok;
+  } catch {
+    return false; // not up (yet)
+  }
+}
+
 async function waitUntilServing(url: string, timeoutMs: number): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (previewExit) throw new Error(`vite preview ${previewExit}`);
-    try {
-      if ((await fetch(url)).ok) return;
-    } catch {
-      // not up yet
-    }
+    if (await isServing(url)) return;
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
   throw new Error(`${url} did not start serving within ${timeoutMs} ms`);
+}
+
+function stopPreview(): void {
+  if (preview?.pid) {
+    try {
+      process.kill(-preview.pid);
+    } catch {
+      // the process group is already gone
+    }
+  }
+  preview = undefined;
+}
+
+// A killed or interrupted run must not leave a preview server behind to be mistaken for the next run's app.
+process.once("exit", stopPreview);
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.once(signal, () => {
+    stopPreview();
+    process.exit(1);
+  });
 }
 
 function startPreview(): ChildProcess {
@@ -46,18 +70,26 @@ function startPreview(): ChildProcess {
 
 BeforeAll(async () => {
   if (!externalUrl) {
+    if (await isServing(baseUrl)) {
+      throw new Error(
+        `Something already serves ${baseUrl}; stop it, or set WEB_URL to test that instance deliberately.`,
+      );
+    }
     preview = startPreview();
   }
-  await waitUntilServing(baseUrl, 30_000);
-  // Uses the installed Google Chrome, so no Playwright browser download is needed.
-  browser = await chromium.launch({ channel: "chrome" });
+  try {
+    await waitUntilServing(baseUrl, 30_000);
+    // Uses the installed Google Chrome, so no Playwright browser download is needed.
+    browser = await chromium.launch({ channel: "chrome" });
+  } catch (error) {
+    stopPreview();
+    throw error;
+  }
 });
 
 AfterAll(async () => {
   await browser?.close();
-  if (preview?.pid) {
-    process.kill(-preview.pid);
-  }
+  stopPreview();
 });
 
 Before(async () => {

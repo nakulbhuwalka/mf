@@ -34,4 +34,4 @@ pnpm nx migrate db-migrations         # apply Liquibase changelogs to PostgreSQL
 pnpm nx affected -t build test        # only what changed
 ```
 
-`fund-data` builds `db-migrations` first (`mvn install` puts its artifact in `~/.m2`). The BDD suites start the services themselves, or reuse them when `FUND_DATA_URL`, `PARSER_URL` or `WEB_URL` point at running instances.
+`fund-data` builds `db-migrations` first (`mvn install` puts its artifact in `~/.m2`). The BDD suites start the services themselves, from the freshly built artifacts. If something already answers on 8081, 8082 or 4173 they refuse to run, rather than silently testing a stale process. To test an already-running instance on purpose, set `FUND_DATA_URL`, `PARSER_URL` or `WEB_URL`; the suite then starts nothing.
