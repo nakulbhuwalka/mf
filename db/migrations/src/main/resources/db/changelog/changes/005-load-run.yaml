@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: "005"
+      author: mf
+      comment: audit log of bulk loads from mfapi.in /mf/latest
+      changes:
+        - createTable:
+            tableName: load_run
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  generationType: ALWAYS
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: started_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: finished_at
+                  type: timestamptz
+              - column:
+                  name: status
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: schemes_upserted
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: error
+                  type: text
+        - sql:
+            comment: Liquibase open source has no check-constraint change
+            sql: ALTER TABLE load_run ADD CONSTRAINT ck_load_run_status CHECK (status IN ('RUNNING', 'SUCCESS', 'FAILED'))
+      rollback:
+        - dropTable:
+            tableName: load_run

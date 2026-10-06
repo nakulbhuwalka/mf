@@ -11,3 +11,6 @@ databaseChangeLog:
   - include:
       file: changes/004-scheme-sync.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changes/005-load-run.yaml
+      relativeToChangelogFile: true
