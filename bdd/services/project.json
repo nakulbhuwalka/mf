@@ -1,0 +1,18 @@
+{
+  "name": "bdd-services",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "bdd/services/src",
+  "implicitDependencies": ["fund-data", "statement-parser"],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "inputs": ["default", "^default", { "env": "FUND_DATA_URL" }, { "env": "PARSER_URL" }],
+      "options": {
+        "command": "mvn -q test",
+        "cwd": "bdd/services"
+      }
+    }
+  }
+}

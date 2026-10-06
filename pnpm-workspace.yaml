@@ -1,0 +1,7 @@
+packages:
+  - web
+  - bdd/web
+
+allowBuilds:
+  esbuild: false
+  nx: false

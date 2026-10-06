@@ -1,0 +1,178 @@
+openapi: 3.0.3
+info:
+  title: fund-data API
+  version: 0.1.0
+  description: >
+    Mutual fund catalogue and NAV history, sourced from mfapi.in and cached in PostgreSQL.
+    Public data only. No authentication (single-user, local).
+servers:
+  - url: http://localhost:8081
+paths:
+  /funds:
+    get:
+      operationId: searchFunds
+      summary: Search schemes by name
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Case-insensitive substring of the scheme name.
+          schema: { type: string, minLength: 2 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "200":
+          description: Matching schemes, ordered by name.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FundPage" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+  /funds/{schemeCode}:
+    get:
+      operationId: getFund
+      summary: Get one scheme
+      parameters:
+        - $ref: "#/components/parameters/SchemeCode"
+      responses:
+        "200":
+          description: The scheme.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Fund" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /funds/by-isin/{isin}:
+    get:
+      operationId: getFundByIsin
+      summary: Find a scheme by either of its ISINs
+      parameters:
+        - name: isin
+          in: path
+          required: true
+          schema: { type: string, pattern: "^[A-Z0-9]{12}$" }
+      responses:
+        "200":
+          description: The scheme whose growth or dividend-reinvestment ISIN matches.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Fund" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /funds/{schemeCode}/nav:
+    get:
+      operationId: getNavHistory
+      summary: NAV history for a scheme
+      description: >
+        Refreshes from mfapi.in first when the stored NAV is stale (subject to the refresh throttle).
+        If mfapi.in is unreachable, serves cached data and sets `stale` to true.
+      parameters:
+        - $ref: "#/components/parameters/SchemeCode"
+        - name: from
+          in: query
+          description: Inclusive start date.
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          description: Inclusive end date.
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: NAV points ordered by date ascending.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NavHistory" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "503":
+          description: Nothing cached and mfapi.in is unreachable.
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+  /actuator/health:
+    get:
+      operationId: health
+      summary: Liveness
+      responses:
+        "200":
+          description: Service is up.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, example: UP }
+components:
+  parameters:
+    SchemeCode:
+      name: schemeCode
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+  responses:
+    BadRequest:
+      description: Invalid parameter.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    NotFound:
+      description: No such scheme.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    Fund:
+      type: object
+      required: [schemeCode, schemeName]
+      properties:
+        schemeCode: { type: integer, example: 119551 }
+        schemeName: { type: string }
+        fundHouse: { type: string, nullable: true }
+        schemeType: { type: string, nullable: true }
+        schemeCategory: { type: string, nullable: true }
+        isinGrowth: { type: string, nullable: true }
+        isinDivReinvestment: { type: string, nullable: true }
+        latestNav:
+          nullable: true
+          allOf: [{ $ref: "#/components/schemas/NavPoint" }]
+    FundPage:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Fund" }
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+    NavPoint:
+      type: object
+      required: [date, nav]
+      properties:
+        date: { type: string, format: date }
+        nav:
+          type: string
+          description: Decimal as a string to avoid float rounding (up to 6 decimal places).
+          example: "123.456700"
+    NavHistory:
+      type: object
+      required: [schemeCode, stale, points]
+      properties:
+        schemeCode: { type: integer }
+        stale:
+          type: boolean
+          description: True when the data could not be refreshed from mfapi.in and is served from cache.
+        points:
+          type: array
+          items: { $ref: "#/components/schemas/NavPoint" }
+    Problem:
+      type: object
+      description: RFC 7807 problem details.
+      required: [title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }

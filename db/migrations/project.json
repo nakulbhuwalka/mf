@@ -1,0 +1,33 @@
+{
+  "name": "db-migrations",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "db/migrations/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "mvn -q install -DskipTests",
+        "cwd": "db/migrations"
+      },
+      "inputs": ["{projectRoot}/pom.xml", "{projectRoot}/src/main/**/*"],
+      "outputs": ["{projectRoot}/target"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "mvn -q test",
+        "cwd": "db/migrations"
+      }
+    },
+    "migrate": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "mvn liquibase:update",
+        "cwd": "db/migrations"
+      }
+    }
+  }
+}
