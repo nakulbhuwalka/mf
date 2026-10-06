@@ -11,7 +11,7 @@ A monorepo of independent services: a Java backend, a Python backend and a React
 - **Coupling:** independent services. Each builds and runs on its own. They share only OpenAPI contracts.
 - **Tooling (from CLAUDE.md):** Maven for Java, uv for Python, pnpm for TypeScript.
 - **Root driver:** Docker Compose runs the full stack. A Makefile delegates build and test to each module's native tool.
-- **Domain:** assumed to be mutual funds (continuing the earlier API). The scaffold uses neutral names ("funds", "analytics") so the domain is easy to change.
+- **Domain:** assumed to be mutual funds (continuing the earlier API). The scaffold uses neutral names ("funds", "statements") so the domain is easy to change.
 
 ## Layout
 
@@ -19,9 +19,9 @@ A monorepo of independent services: a Java backend, a Python backend and a React
 mf/
 ├── services/
 │   ├── funds-api/         # Java 25, Spring Boot 4.1.1, Maven  (:8080)
-│   └── analytics-api/     # Python 3.13, FastAPI, uv           (:8000)
+│   └── statement-api/     # Python 3.13, FastAPI, uv           (:8000)
 ├── web/                   # React 19, Vite, TypeScript, pnpm   (:5173 dev, :80 in compose)
-├── contracts/             # funds-api.openapi.yaml, analytics-api.openapi.yaml
+├── contracts/             # funds-api.openapi.yaml, statement-api.openapi.yaml
 ├── docker-compose.yml
 ├── Makefile
 └── README.md
@@ -35,16 +35,16 @@ mf/
 - `GET /api/funds` returns a small hard-coded list.
 - One test for each endpoint. Dockerfile is multi-stage (Maven build, JRE runtime).
 
-### services/analytics-api (Python)
+### services/statement-api (Python)
 - FastAPI, managed with uv (`pyproject.toml` and `uv.lock`).
 - `GET /health` returns `{"status":"ok"}`.
-- `GET /api/analytics` returns a small hard-coded payload.
+- `GET /api/statements` returns a small hard-coded payload.
 - One pytest test for each endpoint. Dockerfile installs with uv.
 
 ### web (React)
 - Vite, React 19 and TypeScript, managed with pnpm.
 - One page that calls both services and shows each result, or an error state if a call fails.
-- Dev: Vite proxies `/api/funds` to `:8080` and `/api/analytics` to `:8000`, so there are no CORS problems.
+- Dev: Vite proxies `/api/funds` to `:8080` and `/api/statements` to `:8000`, so there are no CORS problems.
 - Compose: an nginx container serves the built app and proxies the same two paths to the service containers.
 - One Vitest test for the page, with `fetch` mocked.
 
@@ -54,7 +54,7 @@ mf/
 
 ## Data flow
 
-Browser → (Vite proxy or nginx) → `funds-api` or `analytics-api`. The services never call each other.
+Browser → (Vite proxy or nginx) → `funds-api` or `statement-api`. The services never call each other.
 
 ## Error handling
 
