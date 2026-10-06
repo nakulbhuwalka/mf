@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: "001"
+      author: mf
+      comment: pg_trgm for substring search on scheme names
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS pg_trgm
+      rollback:
+        - sql:
+            sql: DROP EXTENSION IF EXISTS pg_trgm

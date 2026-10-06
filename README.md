@@ -20,7 +20,7 @@ Nx is the top-level build. Targets are plain `nx:run-commands` wrappers around `
 
 ## Prerequisites
 
-Node 24 with pnpm, JDK 25, Maven, uv, and Google Chrome (for `bdd-web`).
+Node 24 with pnpm, JDK 25, Maven, uv, Google Chrome (for `bdd-web`), and Docker (the `db-migrations` tests start a throwaway PostgreSQL with Testcontainers; they fail, not skip, when Docker is unavailable).
 
 ## Commands
 
@@ -30,7 +30,9 @@ pnpm nx run-many -t build test        # build and test everything
 pnpm nx serve fund-data               # http://localhost:8081  (/actuator/health)
 pnpm nx serve statement-parser        # http://localhost:8082  (/health)
 pnpm nx serve web                     # http://localhost:5173
-pnpm nx migrate db-migrations         # apply Liquibase changelogs to PostgreSQL (jdbc:postgresql://localhost:5432/mf)
+pnpm nx run db-migrations:db-up       # local PostgreSQL 18 in Docker (db/docker-compose.yml), localhost:5432, db/user/password mf
+pnpm nx run db-migrations:migrate     # apply the Liquibase changelogs to it (not `nx migrate`, which is Nx's own upgrade command)
+pnpm nx run db-migrations:db-down     # stop it; the data volume is kept (`docker compose -f db/docker-compose.yml down -v` wipes it)
 pnpm nx affected -t build test        # only what changed
 ```
 

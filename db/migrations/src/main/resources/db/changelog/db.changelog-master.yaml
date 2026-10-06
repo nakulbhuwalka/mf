@@ -1,1 +1,16 @@
-databaseChangeLog: []
+databaseChangeLog:
+  - include:
+      file: changes/001-extensions.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/002-scheme.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/003-nav.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/004-scheme-sync.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/005-load-run.yaml
+      relativeToChangelogFile: true

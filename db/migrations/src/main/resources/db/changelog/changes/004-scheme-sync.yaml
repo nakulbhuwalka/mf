@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: "004"
+      author: mf
+      comment: cache bookkeeping per scheme, kept apart so scheme stays a pure mirror of mfapi.in
+      changes:
+        - createTable:
+            tableName: scheme_sync
+            columns:
+              - column:
+                  name: scheme_code
+                  type: integer
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    foreignKeyName: fk_scheme_sync_scheme
+                    referencedTableName: scheme
+                    referencedColumnNames: scheme_code
+                    deleteCascade: true
+              - column:
+                  name: latest_nav_date
+                  type: date
+              - column:
+                  name: history_loaded
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_checked_at
+                  type: timestamptz
+      rollback:
+        - dropTable:
+            tableName: scheme_sync

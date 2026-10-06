@@ -1,0 +1,65 @@
+databaseChangeLog:
+  - changeSet:
+      id: "002"
+      author: mf
+      comment: scheme catalogue, a mirror of mfapi.in keyed by its scheme code
+      changes:
+        - createTable:
+            tableName: scheme
+            columns:
+              - column:
+                  name: scheme_code
+                  type: integer
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: scheme_name
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fund_house
+                  type: text
+              - column:
+                  name: scheme_type
+                  type: text
+              - column:
+                  name: scheme_category
+                  type: text
+              - column:
+                  name: isin_growth
+                  type: varchar(12)
+              - column:
+                  name: isin_div_reinvestment
+                  type: varchar(12)
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamptz
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: scheme
+            indexName: ix_scheme_isin_growth
+            columns:
+              - column:
+                  name: isin_growth
+        - createIndex:
+            tableName: scheme
+            indexName: ix_scheme_isin_div_reinvestment
+            columns:
+              - column:
+                  name: isin_div_reinvestment
+        - sql:
+            comment: trigram GIN index for GET /funds?q= substring search
+            sql: CREATE INDEX ix_scheme_name_trgm ON scheme USING gin (scheme_name gin_trgm_ops)
+      rollback:
+        - dropTable:
+            tableName: scheme

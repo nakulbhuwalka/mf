@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: "003"
+      author: mf
+      comment: one NAV per scheme per day; exact decimals, idempotent upserts via the primary key
+      changes:
+        - createTable:
+            tableName: nav
+            columns:
+              - column:
+                  name: scheme_code
+                  type: integer
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: nav_date
+                  type: date
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: nav
+                  type: numeric(18,6)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: nav
+            baseColumnNames: scheme_code
+            constraintName: fk_nav_scheme
+            referencedTableName: scheme
+            referencedColumnNames: scheme_code
+            onDelete: CASCADE
+      rollback:
+        - dropTable:
+            tableName: nav

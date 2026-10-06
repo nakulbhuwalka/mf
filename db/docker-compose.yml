@@ -1,0 +1,24 @@
+# Local development database. Credentials match the defaults in db/migrations/pom.xml
+# (db.url / db.username / db.password). The tests do not use this file: they start their own
+# throwaway PostgreSQL with Testcontainers, so keep the image tag in step with TestDatabase.java.
+name: mf
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: mf
+      POSTGRES_USER: mf
+      POSTGRES_PASSWORD: mf
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql # PostgreSQL 18+ images keep the data directory one level below this mount
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mf -d mf"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  pgdata:
