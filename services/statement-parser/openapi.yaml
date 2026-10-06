@@ -1,0 +1,157 @@
+openapi: 3.0.3
+info:
+  title: statement-parser API
+  version: 0.1.0
+  description: >
+    Stateless parser for CAMS consolidated account statement (CAS) PDFs.
+    The PDF and the parsed result exist in memory for the duration of one request only.
+    Nothing is written to disk or logged. No authentication (single-user, local).
+servers:
+  - url: http://localhost:8082
+paths:
+  /parse:
+    post:
+      operationId: parseStatement
+      summary: Parse a CAS PDF into normalized JSON
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The CAS PDF.
+                password:
+                  type: string
+                  format: password
+                  description: Password if the PDF is encrypted.
+      responses:
+        "200":
+          description: >
+            Parsed statement. A partial parse still returns 200 with the transactions found and
+            explanations in `warnings`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ParsedStatement" }
+        "413":
+          description: Upload exceeds the size limit.
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+        "422":
+          description: >
+            Not a readable CAS PDF. `code` is one of NOT_A_PDF, PASSWORD_REQUIRED, WRONG_PASSWORD,
+            UNSUPPORTED_FORMAT.
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/Problem" }
+  /health:
+    get:
+      operationId: health
+      summary: Liveness
+      responses:
+        "200":
+          description: Service is up.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, example: ok }
+components:
+  schemas:
+    ParsedStatement:
+      type: object
+      required: [folios, warnings]
+      properties:
+        periodFrom: { type: string, format: date, nullable: true }
+        periodTo: { type: string, format: date, nullable: true }
+        folios:
+          type: array
+          items: { $ref: "#/components/schemas/Folio" }
+        warnings:
+          type: array
+          items: { $ref: "#/components/schemas/Warning" }
+    Folio:
+      type: object
+      required: [folioNumber, amc, schemes]
+      properties:
+        folioNumber: { type: string }
+        amc: { type: string, description: Fund house name as printed on the statement. }
+        schemes:
+          type: array
+          items: { $ref: "#/components/schemas/Scheme" }
+    Scheme:
+      type: object
+      required: [name, transactions]
+      properties:
+        name: { type: string }
+        isin: { type: string, nullable: true, description: Used by the frontend to match fund-data. }
+        amfiCode: { type: string, nullable: true }
+        closingUnits:
+          type: string
+          nullable: true
+          description: Decimal string, as printed on the statement.
+        transactions:
+          type: array
+          items: { $ref: "#/components/schemas/Transaction" }
+    Transaction:
+      type: object
+      required: [date, type, description]
+      properties:
+        date: { type: string, format: date }
+        type:
+          type: string
+          enum:
+            - PURCHASE
+            - SIP_PURCHASE
+            - REDEMPTION
+            - SWITCH_IN
+            - SWITCH_OUT
+            - DIVIDEND_REINVESTMENT
+            - DIVIDEND_PAYOUT
+            - STAMP_DUTY
+            - STT
+            - OTHER
+        description: { type: string, description: Original line text. }
+        amount:
+          type: string
+          nullable: true
+          description: Decimal string. Positive for money in, negative for money out.
+        units:
+          type: string
+          nullable: true
+          description: Decimal string. Positive for units added, negative for units removed.
+        nav:
+          type: string
+          nullable: true
+          description: Decimal string, the NAV on the transaction date.
+        unitBalance:
+          type: string
+          nullable: true
+          description: Decimal string, unit balance after the transaction.
+    Warning:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: UNPARSED_LINE
+        message: { type: string }
+        folioNumber: { type: string, nullable: true }
+        line: { type: integer, nullable: true, description: Page-relative line number, when known. }
+    Problem:
+      type: object
+      description: RFC 7807 problem details.
+      required: [title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        code: { type: string }
